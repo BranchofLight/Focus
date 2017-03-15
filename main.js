@@ -30,7 +30,6 @@ var Node = function(d) {
 		data: d,
 		parent: undefined,
 		children: [],
-    depth: 0,
 		addChildren: function(nodes) {
 			for (var i = 0; i < nodes.length; i++) {
 				this.children.push(nodes[i]);
@@ -181,7 +180,6 @@ var expand = function(n, player, heuristic, playerHeuristic, min) {
           // Down - inside board constraints AND not blank
           if (board[r+i] != undefined && board[r+i][c] != undefined && board[r+i][c] != BLANK) {
             child = copyNode(n);
-            child.depth = n.depth+1;
             moveChips(child.data.board, {r: r, c: c}, {r: r+i, c: c}, i);
             if (heuristic != undefined && min != undefined) {
               child.data.cost = heuristic(child, playerHeuristic.chip);
@@ -199,7 +197,6 @@ var expand = function(n, player, heuristic, playerHeuristic, min) {
           // Up
           if (board[r-i] != undefined && board[r-i][c] != undefined && board[r-i][c] != BLANK) {
             child = copyNode(n);
-            child.depth = n.depth+1;
             moveChips(child.data.board, {r: r, c: c}, {r: r-i, c: c}, i);
             if (heuristic != undefined && min != undefined) {
               child.data.cost = heuristic(child, playerHeuristic.chip);
@@ -217,7 +214,6 @@ var expand = function(n, player, heuristic, playerHeuristic, min) {
           // Left
           if (board[r][c-i] != undefined && board[r][c-i] != BLANK) {
             child = copyNode(n);
-            child.depth = n.depth+1;
             moveChips(child.data.board, {r: r, c: c}, {r: r, c: c-i}, i);
             if (heuristic != undefined && min != undefined) {
               child.data.cost = heuristic(child, playerHeuristic.chip);
@@ -235,7 +231,6 @@ var expand = function(n, player, heuristic, playerHeuristic, min) {
           // Right
           if (board[r][c+i] != undefined && board[r][c+i] != BLANK) {
             child = copyNode(n);
-            child.depth = n.depth+1;
             moveChips(child.data.board, {r: r, c: c}, {r: r, c: c+i}, i);
             if (heuristic != undefined && min != undefined) {
               child.data.cost = heuristic(child, playerHeuristic.chip);
@@ -254,7 +249,6 @@ var expand = function(n, player, heuristic, playerHeuristic, min) {
           // Just dump entire reserve on to each cell and see what happens
           if (player.reserve.length > 0) {
             child = copyNode(n);
-            child.depth = n.depth+1;
             child.data.board[r][c].push(player.reserve);
             if (heuristic != undefined && min != undefined) {
               child.data.cost = heuristic(child, playerHeuristic.chip);
@@ -281,7 +275,10 @@ var expand = function(n, player, heuristic, playerHeuristic, min) {
   // There are no nodes because player cannot make any more!
   // This is a very good move in context, make it have high cost
   if (shouldExpand && children.length === 0) {
-    n.data.cost = 100;
+    if (heuristic != undefined) n.data.cost = heuristic(n, playerHeuristic.chip);
+    // Given that we are changing the root from this and unsuccessfully adding it
+    // .. to the child array, this should not work / be necessary
+    // However, it is, for some reason
     return n;
   }
 
@@ -313,14 +310,12 @@ var getNodeString = function(n) {
  * @param {Node} root - starting state
  * @param {String} player - player moving
  * @param {Function} heuristic
- * @param {Integer} turns - how many turns in the future to look (2*depth)
  * @return {Node} the new state the game is in after move
  */
-var miniMax = function(root, player, heuristic, turns) {
+var miniMax = function(root, player, heuristic) {
   // Must reset cost
   root.data.cost = 0;
   root.children = [];
-  root.depth = 0;
   root.addChildren(expand(root, player));
 
   var opponent = (player === Player_1) ? Player_2 : Player_1;
@@ -593,7 +588,7 @@ var state = Node({
 generateBoard(state);
 var run = function(i) {
   var player = (i%2 === 0) ? Player_1 : Player_2;
-  var heuristic = (i%2 === 0) ? smartHeuristic: smartHeuristic;
+  var heuristic = (i%2 === 0) ? chipDifferential: chipDifferential;
   state = confirmMove(state, miniMax(state, player, heuristic), player);
   state.parent = undefined;
   // console.log(getNodeString(state));
