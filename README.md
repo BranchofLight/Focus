@@ -1,4 +1,4 @@
-# Focus-Board-Game
+# Focus
 
 Currently AI vs. AI only.
 
