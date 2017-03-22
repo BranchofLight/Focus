@@ -588,7 +588,7 @@ var state = Node({
 generateBoard(state);
 var run = function(i) {
   var player = (i%2 === 0) ? Player_1 : Player_2;
-  var heuristic = (i%2 === 0) ? chipDifferential: chipDifferential;
+  var heuristic = (i%2 === 0) ? chipDifferential: smartHeuristic;
   state = confirmMove(state, miniMax(state, player, heuristic), player);
   state.parent = undefined;
   // console.log(getNodeString(state));
@@ -603,4 +603,4 @@ var repeater = setInterval(function() {
   } else {
     clearInterval(repeater);
   }
-}, 0);
+}, 200);
